@@ -1,0 +1,9 @@
+# Don't commit the .env file
+.env
+
+# Ignore dependencies
+node_modules/
+
+# Optional: ignore build output
+dist/
+build/
