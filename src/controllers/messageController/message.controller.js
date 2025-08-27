@@ -1,6 +1,6 @@
 import Message from "../../models/Message/message.model.js";
 import Group from "../../models/Group/group.model.js";
-
+import mongoose from "mongoose";
 // get messages in a group (paginated latest first)
 export const getGroupMessages = async (req, res) => {
   try {
@@ -10,7 +10,7 @@ export const getGroupMessages = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const [messages, total] = await Promise.all([
-      Message.find({ group: groupId }).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("sender", "name email"),
+      Message.find({ group: groupId }).skip(skip).limit(limit).populate("sender", "name email"),
       Message.countDocuments({ group: groupId })
     ]);
 
@@ -47,7 +47,7 @@ export const getUserGroupsWithLastMessage = async (req, res) => {
     const userId = req.params.userId;
 
     const groups = await Group.aggregate([
-      { $match: { members: { $in: [mongoose.Types.ObjectId(userId)] } } },
+      { $match: { "members.user": new mongoose.Types.ObjectId(userId) } },
       {
         $lookup: {
           from: "messages",
@@ -77,3 +77,4 @@ export const getUserGroupsWithLastMessage = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+

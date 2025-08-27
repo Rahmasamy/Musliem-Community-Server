@@ -6,13 +6,14 @@ import {
   updateProduct,
   deleteProduct
 } from "../../controllers/productController/productController.js";
+import protect from "../../middlewares/auth/authMiddleware.js";
 
 const productRouter = express.Router();
 
-productRouter.post("/", createProduct);        // Create
+productRouter.post("/",protect, createProduct);        // Create
 productRouter.get("/", getProducts);           // Read all
 productRouter.get("/:id", getProductById);     // Read single
-productRouter.put("/:id", updateProduct);      // Update
-productRouter.delete("/:id", deleteProduct);   // Delete
+productRouter.put("/:id", protect,updateProduct);      // Update
+productRouter.delete("/:id",protect, deleteProduct);   // Delete
 
 export default productRouter;

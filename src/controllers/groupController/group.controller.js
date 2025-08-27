@@ -5,10 +5,24 @@ import Group from "../../models/Group/group.model.js";
 export const createGroup = async (req, res) => {
     try {
         const { name, description, joinOption, members } = req.body;
-        const image = req.body.image || req.file?.path || "";
+        const image = req.file ? `/uploads/${req.file.filename}` : null;
+
 
         // Ensure the creator (Admin) is in the list
         const creator = { user: req.user._id, role: "admin" };
+        console.log("///////////////////")
+        console.log(creator)
+        const alreadyExists = members?.some(
+            (item) => String(item.user) === String(req.user._id)
+        );
+
+        console.log(members)
+        console.log(alreadyExists)
+        if (alreadyExists) {
+            return res
+                .status(400)
+                .json({ message: "User is already in the members list" });
+        }
         const finalMembers = members ? [...members, creator] : [creator];
 
         const group = await Group.create({
@@ -24,6 +38,24 @@ export const createGroup = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
+};
+
+const addMemberToGroup = async (groupId, userId, role = "member") => {
+  const group = await Group.findById(groupId);
+
+  if (!group) throw new Error("Group not found");
+
+  
+  const alreadyMember = group.members.some(
+    (m) => m.user.toString() === userId.toString()
+  );
+
+  if (alreadyMember) throw new Error("User is already a member of this group");
+
+  group.members.push({ user: userId, role });
+  await group.save();
+
+  return group;
 };
 
 export const getSingleGroup = async (req, res) => {
@@ -43,7 +75,7 @@ export const getSingleGroup = async (req, res) => {
 export const getAllGroups = async (req, res) => {
     try {
         const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 6;
+        const limit = Number(req.query.limit) || 3;
         const skip = (page - 1) * limit;
 
         const [groups, total] = await Promise.all([
@@ -68,7 +100,7 @@ export const joinGroup = async (req, res) => {
             })
         group.members.push({ user: req.user._id, role: "member" })
         await group.save()
-         res.json(group);
+        res.json(group);
 
     }
     catch (err) {
@@ -76,34 +108,34 @@ export const joinGroup = async (req, res) => {
     }
 }
 
-export const leaveGroup = async (req,res) => {
+export const leaveGroup = async (req, res) => {
     try {
-  const group = await Group.findById(req.params.id)
+        const group = await Group.findById(req.params.id)
         if (!group) return res.status(404).json({ message: "Group not found" });
         console.log(group)
-        group.members = group.members.filter( member => member.user.toString() !== req.user._id.toString())
-         await group.save();
-    res.json({ message: "Left group" });
+        group.members = group.members.filter(member => member.user.toString() !== req.user._id.toString())
+        await group.save();
+        res.json({ message: "Left group" });
     }
-     catch (err) {
+    catch (err) {
         res.status(500).json({ message: err.message });
     }
 
 }
 
 export const getUserGroups = async (req, res) => {
-  try {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-    const [groups, total] = await Promise.all([
-      Group.find({ "members.user": req.user._id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Group.countDocuments({ "members.user": req.user._id })
-    ]);
+        const [groups, total] = await Promise.all([
+            Group.find({ "members.user": req.user._id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Group.countDocuments({ "members.user": req.user._id })
+        ]);
 
-    res.json({ groups, page, totalPages: Math.ceil(total / limit) });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+        res.json({ groups, page, totalPages: Math.ceil(total / limit) });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 };

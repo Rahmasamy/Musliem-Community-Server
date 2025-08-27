@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
-
 const ServiceSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId, // Reference to User model
+    ref: "User",
+    required: true
+  },
   name: { type: String, required: true },        // e.g. Babysitter Name
   image: { type: String },                       // image path or URL
   description: { type: String },

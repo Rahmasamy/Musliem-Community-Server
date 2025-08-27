@@ -22,7 +22,8 @@ const productSchema = new mongoose.Schema(
     },
     image: {
       type: String, // store URL or file path
-      required: true
+      required: true,
+      default : "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.dell.com%2Fen-uk%2Fshop%2Fdell-laptops%2Fscr%2Flaptops&psig=AOvVaw3suT_a23umOtFLKPIxSTQX&ust=1756297474373000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCODamoy8qI8DFQAAAAAdAAAAABAE"
     },
     contactNumber: {
       type: String,

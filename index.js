@@ -1,22 +1,29 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import connectDB from './config/db.js';
-import router from './routes/authRoutes/authRoutes.js';
-import serviceRouter from './routes/serviceRoutes/serviceRoutes.js'
-import eventRouter from './routes/eventRoutes/eventRoutes.js'
-import groupRouter from './routes/groupRoutes/groupRoutes.js';
-import messageRouter from './routes/messageRoutes/messageRoutes.js';
+import connectDB from './src/config/db.js';
+import router from './src/routes/authRoutes/authRoutes.js';
+import serviceRouter from './src/routes/serviceRoutes/serviceRoutes.js'
+import eventRouter from './src/routes/eventRoutes/eventRoutes.js'
+import groupRouter from './src/routes/groupRoutes/groupRoutes.js';
+import messageRouter from './src/routes/messageRoutes/messageRoutes.js';
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import privateChatRouter from './routes/privateChatRoutes/privateChatRoute.js';
-import privateMessageRouter from './routes/privateMessagesRoute/privateMessageRoutes.js';
-import productRouter from './routes/productRoutes/productRoutes.js';
-import advertiseRouter from './routes/advertiseRoutes/advertiseRoutes.js';
+import privateChatRouter from './src/routes/privateChatRoutes/privateChatRoute.js';
+import privateMessageRouter from './src/routes/privateMessagesRoute/privateMessageRoutes.js';
+import productRouter from './src/routes/productRoutes/productRoutes.js';
+import advertiseRouter from './src/routes/advertiseRoutes/advertiseRoutes.js';
 import cookieParser from 'cookie-parser';
-import errorHandlerMiddleWare from './middlewares/errorHandleMiddleware/errorHandle.js';
+import errorHandlerMiddleWare from './src/middlewares/errorHandleMiddleware/errorHandle.js';
+import path from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import profileRouter from './src/routes/profileRoutes/profileRoutes.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 
 
@@ -31,8 +38,7 @@ app.use(express.json());
 
 app.use(cookieParser());
 
-app.use("/uploads", express.static("uploads"));
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Routes
 app.use('/api/auth', router);
 app.use("/api/services", serviceRouter);
@@ -43,6 +49,7 @@ app.use("/api/private-chats", privateChatRouter);
 app.use("/api/private-messages", privateMessageRouter);
 app.use("/api/products", productRouter);
 app.use("/api/advertise", advertiseRouter);
+app.use("/api/profile", profileRouter);
 
 const server = http.createServer(app);
 const io = new Server(server, {
