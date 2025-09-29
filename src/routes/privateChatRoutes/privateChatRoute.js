@@ -8,6 +8,6 @@ const privateChatRouter = express.Router();
 
 privateChatRouter.post("/", createOrGetPrivateChat);
 
-privateChatRouter.get("/user/:userId", getUserPrivateChats);
+privateChatRouter.get("/:userId", getUserPrivateChats);
 
 export default privateChatRouter;

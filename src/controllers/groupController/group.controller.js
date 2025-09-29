@@ -40,7 +40,7 @@ export const createGroup = async (req, res) => {
     }
 };
 
-const addMemberToGroup = async (groupId, userId, role = "member") => {
+export const addMemberToGroup = async (groupId, userId, role = "member") => {
   const group = await Group.findById(groupId);
 
   if (!group) throw new Error("Group not found");
@@ -126,7 +126,7 @@ export const leaveGroup = async (req, res) => {
 export const getUserGroups = async (req, res) => {
     try {
         const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
+        const limit = Number(req.query.limit) || 3;
         const skip = (page - 1) * limit;
 
         const [groups, total] = await Promise.all([

@@ -19,20 +19,26 @@ import path from 'path';
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import profileRouter from './src/routes/profileRoutes/profileRoutes.js';
-
+import searchRouter from './src/routes/searchRouter/searchRouter.js';
+import Message from './src/models/Message/message.model.js';
+import PrivateMessage from './src/models/privateMessage/privateMessage.model.js';
+import bodyParser from "body-parser";
+import paymentRouter from './src/routes/paymentRoutes/paymentRoutes.js';
 dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 
 
 const app = express();
+app.use(bodyParser.json());
+
 //enable CORS
 app.use(cors({
-  origin: 'http://localhost:5173',   // ← الـ origin بتاع React
+  origin: "http://localhost:3001",
   credentials: true
 }));
+
 // Body parser
 app.use(express.json());
 
@@ -50,46 +56,45 @@ app.use("/api/private-messages", privateMessageRouter);
 app.use("/api/products", productRouter);
 app.use("/api/advertise", advertiseRouter);
 app.use("/api/profile", profileRouter);
-
+app.use("/api/search", searchRouter);
+app.use("/api",paymentRouter)
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST", "PUT", "DELETE"]
-    }
+  cors: {
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST", "PUT", "DELETE"]
+  }
 })
 io.on("connection", (socket) => {
-    console.log("socket connected", socket.id);
-    socket.on("joinGroup", (groupId) => {
-        socket.join(groupId)
-        console.log(`${socket.id} joined ${groupId}`);
-    })
-    socket.on("leaveGroup", (groupId) => {
-        socket.leave(groupId);
-    });
-    socket.on("sendMessage", async (payload) => {
-        try {
-            const msg = await Message.create({
-                group: payload.groupId,
-                sender: payload.senderId,
-                text: payload.text,
-                image: payload.image || ""
-            });
-            
-      const populated = await msg.populate("sender", "name email").execPopulate?.() || msg;
+  console.log("socket connected", socket.id);
 
-      // emit to room
-      io.to(payload.groupId).emit("receiveMessage", populated);
-        }
-        catch (error) {
-            console.error("socket sendMessage error", err);
-        }
-    })
-    socket.on("disconnect", () => {
-    console.log("socket disconnected", socket.id);
+  socket.on("joinGroup", (groupId) => {
+    socket.join(groupId);
+    console.log(`${socket.id} joined ${groupId}`);
   });
-})
-io.on("connection", (socket) => {
+
+  socket.on("leaveGroup", (groupId) => {
+    socket.leave(groupId);
+  });
+
+  socket.on("sendMessage", async (payload) => {
+    try {
+      const msg = await Message.create({
+        group: payload.groupId,
+        sender: payload.senderId,
+        text: payload.text,
+        image: payload.image || ""
+      });
+
+      const populated = await msg.populate("sender", "name email");
+      io.to(payload.groupId).emit("receiveMessage", populated);
+      console.log("message sent ")
+    } catch (err) {
+      console.error("socket sendMessage error", err);
+    }
+  });
+
+  // private chat
   socket.on("joinPrivateChat", (chatId) => {
     socket.join(chatId);
   });
@@ -103,12 +108,16 @@ io.on("connection", (socket) => {
     });
 
     const populated = await msg.populate("sender", "name email");
-
     io.to(payload.chatId).emit("receivePrivateMessage", populated);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("socket disconnected", socket.id);
   });
 });
 
+
 connectDB();
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 app.use(errorHandlerMiddleWare);

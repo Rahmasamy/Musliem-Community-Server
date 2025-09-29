@@ -26,5 +26,6 @@ const eventSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+eventSchema.index({ name: "text", description: "text", Location: "text" });
 
 export default mongoose.model("Event", eventSchema);

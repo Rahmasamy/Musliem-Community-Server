@@ -3,10 +3,24 @@ import Service from "../../models/Service/Service.model.js"
 // apply for Role 
 export const createService = async (req, res) => {
   try {
-    const { name, image, description, price, location, phone, serviceType, extraDetails } = req.body;
+    const { name, description, price, location, phone, serviceType, extraDetails } = req.body;
+    
+    // Handle image upload (store relative path)
+    let image = null;
+    if (req.file) {
+      image = `uploads/${req.file.filename}`;
+    }
+    
     const service = new Service({
       user: req.user._id,
-      name, image, description, price, location, phone, serviceType, extraDetails
+      name, 
+      image, 
+      description, 
+      price, 
+      location, 
+      phone, 
+      serviceType, 
+      extraDetails
     })
     await service.save();
     res.status(201).json({
@@ -26,22 +40,48 @@ export const createService = async (req, res) => {
 export const getServicesByType = async (req, res) => {
   try {
     const { type } = req.params;
-    const services = await Service.find({ serviceType: type });
-    res.json(services);
+    const { page = 1, limit = 3 } = req.query;
+
+    const skip = (page - 1) * limit;
+    const total = await Service.countDocuments({ serviceType: type });
+
+    const services = await Service.find({ serviceType: type })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.json({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+      services,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 
+
 export const updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, image, description, price, location, phone, serviceType, extraDetails } = req.body;
+    const { name, description, price, location, phone, serviceType, extraDetails } = req.body;
+
+    // Handle image upload (store relative path)
+    let image = null;
+    if (req.file) {
+      image = `uploads/${req.file.filename}`;
+    }
+
+    const updateData = { name, description, price, location, phone, serviceType, extraDetails };
+    if (image) {
+      updateData.image = image;
+    }
 
     const service = await Service.findByIdAndUpdate(
       id,
-      { name, image, description, price, location, phone, serviceType, extraDetails },
+      updateData,
       { new: true }
     );
 

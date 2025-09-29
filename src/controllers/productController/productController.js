@@ -3,7 +3,20 @@ import Product from "../../models/Product/product.model.js";
 // Create product
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create({ ...req.body, user: req.user._id });
+    const { name, description, price, contactNumber } = req.body;
+    
+    // Handle image upload from 'image' field only
+    const image = req.file ? `uploads/${req.file.filename}` : null; // relative path like other modules
+    // If no image uploaded, the model will use its default image URL
+    
+    const product = await Product.create({ 
+      name, 
+      description, 
+      price, 
+      contactNumber,
+      image,
+      user: req.user._id 
+    });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -43,7 +56,17 @@ export const getProductById = async (req, res) => {
 // Update product
 export const updateProduct = async (req, res) => {
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { name, description, price, contactNumber } = req.body;
+    
+    // Handle image upload from 'image' field only
+    const image = req.file ? `uploads/${req.file.filename}` : null;
+    
+    const updateData = { name, description, price, contactNumber };
+    if (image) {
+      updateData.image = image;
+    }
+    
+    const updated = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!updated) return res.status(404).json({ message: "Product not found" });
     res.json(updated);
   } catch (err) {

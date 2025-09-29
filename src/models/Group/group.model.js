@@ -19,4 +19,6 @@ const groupSchema = new mongoose.Schema({
     members: [MemberSubSchema]
 },{timestamps:true})
 
+groupSchema.index({ name: "text", description: "text" });
+
 export default mongoose.model("Group", groupSchema);

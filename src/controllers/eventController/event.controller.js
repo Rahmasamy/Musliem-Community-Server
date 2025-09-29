@@ -43,7 +43,7 @@ export const createEvent = async (req, res) => {
       invitationLink: invitationLink || "",
       eventType,
       Location: Location || "",
-      members: [req.user._id], // صاحب الحدث أول عضو
+      members: [req.user._id], 
     });
 
     await event.save();
@@ -65,7 +65,7 @@ export const createEvent = async (req, res) => {
 export const getAllEvents = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;  // default page 1
-    const limit = 4; // events per load
+    const limit = 3; // events per load
     const skip = (page - 1) * limit;
 
     const events = await Event.find()

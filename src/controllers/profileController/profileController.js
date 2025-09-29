@@ -1,7 +1,7 @@
 import User from "../../models/User/User.js";
-import Service from "../../models/advertise/advertise.model.js";
 import Product from "../../models/Product/product.model.js";
 import bcrypt from "bcryptjs";
+import Service from "../../models/Service/Service.model.js";
 export const getMyProfile = async (req, res) => {
   try {
     const profile = await User.findById(req.user._id);

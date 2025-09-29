@@ -1,5 +1,5 @@
 import PrivateChat from "../../models/privateChat/privateChat.model.js";
-
+import mongoose from "mongoose";
 
 export const createOrGetPrivateChat = async (req,res) => {
      const { userId1, userId2 } = req.body;
@@ -21,19 +21,19 @@ export const createOrGetPrivateChat = async (req,res) => {
 
 export const getUserPrivateChats = async (req, res) => {
     try {
-        const userId = mongoose.Types.ObjectId(req.params.userId);
+        const userId = new mongoose.Types.ObjectId(req.params.userId);
         const chats = await PrivateChat.aggregate([
             { $match: { members: { $in: [userId] } } },
             {
                 $lookup: {
-                    from: "PrivateMessages",
+                    from: "privatemessages",
                     let: { chatId: "$_id" },
                     pipeline: [
                         { $match: { $expr: { $eq: ["$chat", "$$chatId"] } } },
                         { $sort: { createdAt: -1 } },
                         { $limit: 1 }, {
                             $lookup: {
-                                from: "Users",
+                                from: "users",
                                 localField: "sender",
                                 foreignField: "_id",
                                 as: "sender"

@@ -71,9 +71,11 @@ export const registerUser = asyncHandler(async (req, res) => {
         throw new Error("User already exists");
     }
 
-    // extract uploaded files (profile + business photo)
-    const profilePhoto = req.files?.photo ? req.files.photo[0].filename : null;
-    const businessPhoto = req.files?.businessPhoto ? req.files.businessPhoto[0].filename : null;
+    // extract uploaded files and build public paths
+    const photoFilename = req.files?.photo ? req.files.photo[0].filename : null;
+    const businessPhotoFilename = req.files?.businessPhoto ? req.files.businessPhoto[0].filename : null;
+    const photo = photoFilename ? `uploads/${photoFilename}` : null;
+    const businessPhoto = businessPhotoFilename ? `uploads/${businessPhotoFilename}` : null;
 
     const user = await User.create({
         fullName,
@@ -84,7 +86,7 @@ export const registerUser = asyncHandler(async (req, res) => {
         otherSkill,
         bio,
         role,
-        profilePhoto,
+        photo,
         businessPhoto
     });
 
@@ -93,6 +95,8 @@ export const registerUser = asyncHandler(async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        photo: user.photo,
+        businessPhoto: user.businessPhoto,
         token: generateToken(user._id, user.role)
     });
 });

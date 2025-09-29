@@ -19,4 +19,6 @@ const ServiceSchema = new mongoose.Schema({
   extraDetails: { type: mongoose.Schema.Types.Mixed }, // Store dynamic fields
 }, { timestamps: true });
 
+ServiceSchema.index({ name: "text", description: "text", location: "text" });
+
 export default mongoose.model("Service", ServiceSchema);
