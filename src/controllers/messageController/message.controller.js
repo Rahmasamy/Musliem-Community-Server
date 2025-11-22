@@ -10,7 +10,7 @@ export const getGroupMessages = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const [messages, total] = await Promise.all([
-      Message.find({ group: groupId }).skip(skip).limit(limit).populate("sender", "name email"),
+      Message.find({ group: groupId }).skip(skip).limit(limit).populate("sender", "name email photo"),
       Message.countDocuments({ group: groupId })
     ]);
 

@@ -74,7 +74,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     // extract uploaded files and build public paths
     const photoFilename = req.files?.photo ? req.files.photo[0].filename : null;
     const businessPhotoFilename = req.files?.businessPhoto ? req.files.businessPhoto[0].filename : null;
-    const photo = photoFilename ? `uploads/${photoFilename}` : null;
+    const photo = req.file ? req.file.path : null;
     const businessPhoto = businessPhotoFilename ? `uploads/${businessPhotoFilename}` : null;
 
     const user = await User.create({

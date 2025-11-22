@@ -1,17 +1,16 @@
-
 // req.user._id
-
 
 import PrivateMessage from "../../models/privateMessage/privateMessage.model.js";
 
 export const getPrivateMessages = async (req, res) => {
   try {
     const messages = await PrivateMessage.find({ chat: req.params.chatId })
-      .populate("sender", "name email")
+      .populate("sender", "name email photo") 
       .sort({ createdAt: 1 });
 
     res.json(messages);
   } catch (error) {
+    console.error("❌ Error fetching private messages:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -24,7 +23,7 @@ export const sendPrivateMessage = async (req, res) => {
       chat: chatId,
       sender: senderId,
       text,
-      image: image || ""
+      image: image || "",
     });
 
     const populated = await msg.populate("sender", "name email");

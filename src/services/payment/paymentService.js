@@ -87,3 +87,27 @@ export const captureOrder = async (req, res) => {
     res.json(response.data);
 
 };
+export async function getOrderDetails(req, res) {
+  const { orderId } = req.params;
+
+  try {
+    const token = await getAccessToken();
+    const response = await fetch(`${BASE_URL}/v2/checkout/orders/${orderId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      return res.status(400).json({ success: false, error: err });
+    }
+
+    const data = await response.json();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}

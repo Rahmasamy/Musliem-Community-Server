@@ -15,10 +15,14 @@ export const getMyProfile = async (req, res) => {
 export const createProfile = async (req, res) => {
   try {
     const profileData = req.body;
-    if (req.file) {
-      profileData.photo = req.file.filename;
+
+    // لو فيه صورة مرفوعة من Cloudinary، خد الـ URL
+    if (req.file && req.file.path) {
+      profileData.image = req.file.path;
     }
+
     const profile = await User.create(profileData);
+
     res.status(201).json(profile);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -26,20 +30,36 @@ export const createProfile = async (req, res) => {
 };
 
 
+
 // Update a profile
 export const updateProfile = async (req, res) => {
   try {
     const profileData = req.body;
 
-    if (req.file) {
-      profileData.photo = `uploads/${req.file.filename}`;
+    // لو فيه صورة جديدة مرفوعة من Cloudinary
+    if (req.file && req.file.path) {
+      profileData.photo = req.file.path; // URL من Cloudinary
     }
-    const updatedProfile = await User.findByIdAndUpdate(req.user._id, profileData, { new: true });
-    res.json(updatedProfile);
+
+    const updatedProfile = await User.findByIdAndUpdate(
+      req.user._id,
+      profileData,
+      { new: true }
+    );
+
+    if (!updatedProfile) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: "Profile updated successfully",
+      profile: updatedProfile,
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 
 export const deleteProfile = async (req, res) => {

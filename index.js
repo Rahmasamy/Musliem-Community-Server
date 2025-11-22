@@ -12,7 +12,8 @@ import { Server } from "socket.io";
 import privateChatRouter from './src/routes/privateChatRoutes/privateChatRoute.js';
 import privateMessageRouter from './src/routes/privateMessagesRoute/privateMessageRoutes.js';
 import productRouter from './src/routes/productRoutes/productRoutes.js';
-import advertiseRouter from './src/routes/advertiseRoutes/advertiseRoutes.js';
+import contactRouter from './src/routes/contactRoutes/contactRoutes.js';
+
 import cookieParser from 'cookie-parser';
 import errorHandlerMiddleWare from './src/middlewares/errorHandleMiddleware/errorHandle.js';
 import path from 'path';
@@ -24,6 +25,8 @@ import Message from './src/models/Message/message.model.js';
 import PrivateMessage from './src/models/privateMessage/privateMessage.model.js';
 import bodyParser from "body-parser";
 import paymentRouter from './src/routes/paymentRoutes/paymentRoutes.js';
+import { adCleanupCronJob } from './src/services/cron-job/cron-job.js';
+import dashboardRouter from './src/routes/DashboardRoutes/DashboardRoutes.js';
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -54,10 +57,12 @@ app.use('/api/messages', messageRouter)
 app.use("/api/private-chats", privateChatRouter);
 app.use("/api/private-messages", privateMessageRouter);
 app.use("/api/products", productRouter);
-app.use("/api/advertise", advertiseRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/search", searchRouter);
 app.use("/api",paymentRouter)
+app.use("/api/contact-us",contactRouter);
+app.use("/api/dashboard", dashboardRouter);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -68,53 +73,84 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("socket connected", socket.id);
 
+  // ✅ Helper function to leave all joined rooms (except its own socket id)
+  const leaveAllRooms = () => {
+    const rooms = Array.from(socket.rooms);
+    rooms.forEach((room) => {
+      if (room !== socket.id) {
+        socket.leave(room);
+        console.log(`${socket.id} left room ${room}`);
+      }
+    });
+  };
+
+  // ✅ Join group chat
   socket.on("joinGroup", (groupId) => {
+    leaveAllRooms(); // <-- leave previous group or private chat first
     socket.join(groupId);
-    console.log(`${socket.id} joined ${groupId}`);
+    console.log(`${socket.id} joined group ${groupId}`);
   });
 
+  // ✅ Leave group explicitly (optional)
   socket.on("leaveGroup", (groupId) => {
     socket.leave(groupId);
+    console.log(`${socket.id} left group ${groupId}`);
   });
 
+  // ✅ Send message in group
   socket.on("sendMessage", async (payload) => {
     try {
       const msg = await Message.create({
         group: payload.groupId,
         sender: payload.senderId,
         text: payload.text,
-        image: payload.image || ""
+        image: payload.image || "",
       });
 
       const populated = await msg.populate("sender", "name email");
       io.to(payload.groupId).emit("receiveMessage", populated);
-      console.log("message sent ")
+      console.log(`Message sent to group ${payload.groupId}`);
     } catch (err) {
       console.error("socket sendMessage error", err);
     }
   });
 
-  // private chat
+  // ✅ Private chat join
   socket.on("joinPrivateChat", (chatId) => {
+    leaveAllRooms(); // <-- leave any group or chat before joining new one
     socket.join(chatId);
+    console.log(`${socket.id} joined private chat ${chatId}`);
   });
 
+  // ✅ Send private message
   socket.on("sendPrivateMessage", async (payload) => {
-    const msg = await PrivateMessage.create({
-      chat: payload.chatId,
-      sender: payload.senderId,
-      text: payload.text,
-      image: payload.image || ""
-    });
+    try {
+      const msg = await PrivateMessage.create({
+        chat: payload.chatId,
+        sender: payload.senderId,
+        text: payload.text,
+        image: payload.image || "",
+      });
 
-    const populated = await msg.populate("sender", "name email");
-    io.to(payload.chatId).emit("receivePrivateMessage", populated);
+      const populated = await msg.populate("sender", "name email");
+      io.to(payload.chatId).emit("receivePrivateMessage", populated);
+      console.log(`Private message sent to chat ${payload.chatId}`);
+    } catch (err) {
+      console.error("socket sendPrivateMessage error", err);
+    }
+  });
+
+  // ✅ Optional endpoint to leave all
+  socket.on("leaveAllRooms", () => {
+    leaveAllRooms();
   });
 
   socket.on("disconnect", () => {
     console.log("socket disconnected", socket.id);
   });
 });
+
+adCleanupCronJob()
 
 
 connectDB();
