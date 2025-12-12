@@ -263,9 +263,11 @@ export const getPendingAdertisments = async (req, res) => {
     }).populate("user", "fullName email phone photo");
 
     if (!pendingServices.length) {
-      return res
-        .status(400)
-        .json({ message: "No pending advertisement found" });
+      return  res.status(200).json({
+      success: true,
+      message: "Pending advertisement empty",
+      data: [],
+    });
     }
 
     res.status(200).json({
