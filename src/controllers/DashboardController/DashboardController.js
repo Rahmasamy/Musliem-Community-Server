@@ -153,7 +153,7 @@ export const getUsageStats = async (req, res) => {
       Product.countDocuments(),
       Service.countDocuments(),
       Group.countDocuments(),
-      Event.countDocuments()
+      Event.countDocuments(),
     ]);
 
     // Format data for frontend chart or dashboard
