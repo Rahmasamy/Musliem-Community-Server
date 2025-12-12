@@ -283,3 +283,53 @@ export const getPendingAdertisments = async (req, res) => {
     });
   }
 };
+
+
+export const getAllServices = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 4,
+      serviceType,
+      search,
+    } = req.query;
+
+    const query = {};
+
+    // --------- FILTER BY SERVICE TYPE ---------
+    if (serviceType) {
+      query.serviceType = serviceType; // must match enum
+    }
+
+    // --------- TEXT SEARCH ---------
+    if (search) {
+      query.$text = { $search: search };
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // --------- GET SERVICES ---------
+    const services = await Service.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    // --------- COUNT ---------
+    const total = await Service.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
+      data: services,
+    });
+
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch services",
+    });
+  }
+};
