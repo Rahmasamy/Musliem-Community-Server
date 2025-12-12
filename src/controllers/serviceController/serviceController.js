@@ -317,32 +317,34 @@ export const getAllServices = async (req, res) => {
 
     const query = {};
 
-    // --------- FILTER BY SERVICE TYPE ---------
+    // Filter by service type
     if (serviceType) {
-      query.serviceType = serviceType; // must match enum
+      query.serviceType = serviceType;
     }
 
-    // --------- TEXT SEARCH ---------
+    // Regex search
     if (search) {
-      query.$text = { $search: search };
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
+      ];
     }
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    // --------- GET SERVICES ---------
     const services = await Service.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
 
-    // --------- COUNT ---------
     const total = await Service.countDocuments(query);
 
     res.status(200).json({
       success: true,
       total,
       page: Number(page),
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / Number(limit)),
       data: services,
     });
   } catch (error) {
