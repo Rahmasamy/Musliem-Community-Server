@@ -263,11 +263,11 @@ export const getPendingAdertisments = async (req, res) => {
     }).populate("user", "fullName email phone photo");
 
     if (!pendingServices.length) {
-      return  res.status(200).json({
-      success: true,
-      message: "Pending advertisement empty",
-      data: [],
-    });
+      return res.status(200).json({
+        success: true,
+        message: "Pending advertisement empty",
+        data: [],
+      });
     }
 
     res.status(200).json({
@@ -283,16 +283,37 @@ export const getPendingAdertisments = async (req, res) => {
     });
   }
 };
+export const getAllPendingServices = async (req, res) => {
+  try {
+    const pendingServices = await Service.find({
+      adminApprovalStatus: "pending",
+    }).populate("user", "fullName email phone photo");
 
+    if (!pendingServices.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No pending services found",
+        data: [],
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Pending services fetched successfully",
+      data: pendingServices,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching pending services",
+      error: error.message,
+    });
+  }
+};
 
 export const getAllServices = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 4,
-      serviceType,
-      search,
-    } = req.query;
+    const { page = 1, limit = 4, serviceType, search } = req.query;
 
     const query = {};
 
@@ -324,7 +345,6 @@ export const getAllServices = async (req, res) => {
       pages: Math.ceil(total / limit),
       data: services,
     });
-
   } catch (error) {
     console.error("Error fetching services:", error);
     res.status(500).json({
