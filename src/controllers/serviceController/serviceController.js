@@ -264,7 +264,7 @@ export const getPendingAdertisments = async (req, res) => {
 
     if (!pendingServices.length) {
       return res
-        .status(404)
+        .status(400)
         .json({ message: "No pending advertisement found" });
     }
 
