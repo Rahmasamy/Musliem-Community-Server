@@ -10,8 +10,11 @@ export const getGroupMessages = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const [messages, total] = await Promise.all([
-      Message.find({ group: groupId }).skip(skip).limit(limit).populate("sender", "name email photo"),
-      Message.countDocuments({ group: groupId })
+      Message.find({ group: groupId })
+        .skip(skip)
+        .limit(limit)
+        .populate("sender", "name email photo"),
+      Message.countDocuments({ group: groupId }),
     ]);
 
     res.json({ messages, page, totalPages: Math.ceil(total / limit) });
@@ -21,7 +24,6 @@ export const getGroupMessages = async (req, res) => {
 };
 
 // create message via REST (the real-time socket will also emit)
-
 
 export const createMessage = async (req, res) => {
   try {
@@ -60,8 +62,10 @@ export const createMessage = async (req, res) => {
       text,
       image,
     });
-    const populatedMessage = await Message.findById(message._id)
-      .populate("sender", "name email");
+    const populatedMessage = await Message.findById(message._id).populate(
+      "sender",
+      "name email"
+    );
 
     res.status(201).json(populatedMessage);
   } catch (err) {
@@ -70,16 +74,18 @@ export const createMessage = async (req, res) => {
   }
 };
 
-
-
-
-
 export const getUserGroupsWithLastMessage = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = new mongoose.Types.ObjectId(req.params.userId);
 
     const groups = await Group.aggregate([
-      { $match: { "members.user": new mongoose.Types.ObjectId(userId) } },
+      {
+        $match: {
+          members: {
+            $elemMatch: { user: userId }
+          }
+        }
+      },
       {
         $lookup: {
           from: "messages",
@@ -106,6 +112,7 @@ export const getUserGroupsWithLastMessage = async (req, res) => {
 
     res.json(groups);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
