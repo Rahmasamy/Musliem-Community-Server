@@ -21,23 +21,56 @@ export const getGroupMessages = async (req, res) => {
 };
 
 // create message via REST (the real-time socket will also emit)
+import Group from "../models/Group.js";
+import Message from "../models/Message.js";
+
 export const createMessage = async (req, res) => {
   try {
     const { group, text } = req.body;
     const image = req.body.image || req.file?.path || "";
+    const userId = req.user._id;
+
+    const groupDoc = await Group.findById(group);
+
+    if (!groupDoc) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    const isMember = groupDoc.members.some(
+      (m) => m.user.toString() === userId.toString()
+    );
+
+    if (!isMember) {
+      // if (groupDoc.joinOption === "premium" && !req.user.isPremium) {
+      //   return res.status(403).json({
+      //     message: "This group is for premium users only",
+      //   });
+      // }
+
+      groupDoc.members.push({
+        user: userId,
+        role: "member",
+      });
+
+      await groupDoc.save();
+    }
+
     const message = await Message.create({
       group,
-      sender: req.user._id,
+      sender: userId,
       text,
-      image
+      image,
     });
-    // Optionally return populated message
-    const populated = await message.populate("sender", "name email").execPopulate?.() || message;
-    res.status(201).json(populated);
+    const populatedMessage = await Message.findById(message._id)
+      .populate("sender", "name email");
+
+    res.status(201).json(populatedMessage);
   } catch (err) {
+    console.error("Create message error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
