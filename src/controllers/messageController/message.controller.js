@@ -21,8 +21,7 @@ export const getGroupMessages = async (req, res) => {
 };
 
 // create message via REST (the real-time socket will also emit)
-import Group from "../models/Group.js";
-import Message from "../models/Message.js";
+
 
 export const createMessage = async (req, res) => {
   try {
