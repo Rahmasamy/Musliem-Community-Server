@@ -315,7 +315,9 @@ export const getAllServices = async (req, res) => {
   try {
     const { page = 1, limit = 4, serviceType, search } = req.query;
 
-    const query = {};
+    const query = {
+      adminApprovalStatus: "approved", 
+    };
 
     // Filter by service type
     if (serviceType) {
@@ -355,3 +357,4 @@ export const getAllServices = async (req, res) => {
     });
   }
 };
+
