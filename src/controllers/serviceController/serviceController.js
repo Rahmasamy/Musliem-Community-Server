@@ -319,6 +319,7 @@ export const getAllServices = async (req, res) => {
       adminApprovalStatus: "approved", 
     };
 
+    
     // Filter by service type
     if (serviceType) {
       query.serviceType = serviceType;
