@@ -66,37 +66,45 @@ export const getUserGroupsWithLastMessage = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.params.userId);
 
-    const groups = await Group.aggregate([
-      {
-        $match: {
-          members: {
-            $elemMatch: { user: userId }
+   const groups = await Group.aggregate([
+  {
+    $match: {
+      members: {
+        $elemMatch: { user: userId }
+      }
+    }
+  },
+  {
+    $lookup: {
+      from: "messages",
+      let: { groupId: "$_id" },
+      pipeline: [
+        { $match: { $expr: { $eq: ["$group", "$$groupId"] } } },
+        { $sort: { createdAt: -1 } }, // latest message
+        { $limit: 1 },
+        {
+          $lookup: {
+            from: "users",
+            localField: "sender",
+            foreignField: "_id",
+            as: "sender"
           }
-        }
-      },
-      {
-        $lookup: {
-          from: "messages",
-          let: { groupId: "$_id" },
-          pipeline: [
-            { $match: { $expr: { $eq: ["$group", "$$groupId"] } } },
-            { $sort: { createdAt: -1 } },
-            { $limit: 1 },
-            {
-              $lookup: {
-                from: "users",
-                localField: "sender",
-                foreignField: "_id",
-                as: "sender"
-              }
-            },
-            { $unwind: "$sender" }
-          ],
-          as: "lastMessage"
-        }
-      },
-      { $unwind: { path: "$lastMessage", preserveNullAndEmptyArrays: true } }
-    ]);
+        },
+        { $unwind: "$sender" }
+      ],
+      as: "lastMessage"
+    }
+  },
+  { $unwind: { path: "$lastMessage", preserveNullAndEmptyArrays: true } },
+
+  // ✅ THIS is what you were missing
+  {
+    $sort: {
+      "lastMessage.createdAt": -1
+    }
+  }
+]);
+
 
     res.json(groups);
   } catch (error) {

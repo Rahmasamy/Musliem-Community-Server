@@ -20,48 +20,71 @@ export const createOrGetPrivateChat = async (req,res) => {
 }
 
 export const getUserPrivateChats = async (req, res) => {
-    try {
-        const userId = new mongoose.Types.ObjectId(req.params.userId);
-        const chats = await PrivateChat.aggregate([
-            { $match: { members: { $in: [userId] } } },
+  try {
+    const userId = new mongoose.Types.ObjectId(req.params.userId);
+
+    const chats = await PrivateChat.aggregate([
+      // 1️⃣ Match chats where user is a member
+      { $match: { members: { $in: [userId] } } },
+
+      // 2️⃣ Lookup last message
+      {
+        $lookup: {
+          from: "privatemessages",
+          let: { chatId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$chat", "$$chatId"] } } },
+            { $sort: { createdAt: -1 } },
+            { $limit: 1 },
             {
-                $lookup: {
-                    from: "privatemessages",
-                    let: { chatId: "$_id" },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ["$chat", "$$chatId"] } } },
-                        { $sort: { createdAt: -1 } },
-                        { $limit: 1 }, {
-                            $lookup: {
-                                from: "users",
-                                localField: "sender",
-                                foreignField: "_id",
-                                as: "sender"
-                            }
-                        },
-                        { $unwind: "$sender" }
-                    ],
-                    as: "lastMessage"
-                }
+              $lookup: {
+                from: "users",
+                localField: "sender",
+                foreignField: "_id",
+                as: "sender"
+              }
             },
-            { $unwind: { path: "$lastMessage", preserveNullAndEmptyArrays: true } },
-          
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "members",
-                    foreignField: "_id",
-                    as: "members"
-                }
-            },
-            {
-                $project: {
-                    "members.password": 0 
-                }
-            }
-        ])
-         res.json(chats);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-}
+            { $unwind: "$sender" }
+          ],
+          as: "lastMessage"
+        }
+      },
+
+      // 3️⃣ Unwind lastMessage
+      {
+        $unwind: {
+          path: "$lastMessage",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // 4️⃣ Populate members
+      {
+        $lookup: {
+          from: "users",
+          localField: "members",
+          foreignField: "_id",
+          as: "members"
+        }
+      },
+
+      // 5️⃣ Remove sensitive fields
+      {
+        $project: {
+          "members.password": 0
+        }
+      },
+
+      // ✅ 6️⃣ Sort chats by last message time
+      {
+        $sort: {
+          "lastMessage.createdAt": -1
+        }
+      }
+    ]);
+
+    res.json(chats);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
