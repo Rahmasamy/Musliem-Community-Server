@@ -31,30 +31,16 @@ export const createMessage = async (req, res) => {
     const image = req.body.image || req.file?.path || "";
     const userId = req.user._id;
 
-    const groupDoc = await Group.findById(group);
-
-    if (!groupDoc) {
+    const groupExists = await Group.exists({ _id: group });
+    if (!groupExists) {
       return res.status(404).json({ message: "Group not found" });
     }
 
-    const isMember = groupDoc.members.some(
-      (m) => m.user.toString() === userId.toString()
-    );
-
-    if (!isMember) {
-      // if (groupDoc.joinOption === "premium" && !req.user.isPremium) {
-      //   return res.status(403).json({
-      //     message: "This group is for premium users only",
-      //   });
-      // }
-
-      groupDoc.members.push({
-        user: userId,
-        role: "member",
-      });
-
-      await groupDoc.save();
-    }
+    await Group.findByIdAndUpdate(group, {
+      $addToSet: {
+        members: { user: userId, role: "member" },
+      },
+    });
 
     const message = await Message.create({
       group,
@@ -62,6 +48,7 @@ export const createMessage = async (req, res) => {
       text,
       image,
     });
+
     const populatedMessage = await Message.findById(message._id).populate(
       "sender",
       "name email"
@@ -73,6 +60,7 @@ export const createMessage = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 export const getUserGroupsWithLastMessage = async (req, res) => {
   try {
