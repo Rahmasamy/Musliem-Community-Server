@@ -107,22 +107,34 @@ io.on("connection", (socket) => {
   });
 
   // ✅ Send message in group
-  socket.on("sendMessage", async (payload) => {
-    try {
-      const msg = await Message.create({
-        group: payload.groupId,
-        sender: payload.senderId,
-        text: payload.text,
-        image: payload.image || "",
-      });
+ socket.on("sendMessage", async (payload) => {
+  try {
+    const { groupId, senderId, text, image } = payload;
 
-      const populated = await msg.populate("sender", "name email");
-      io.to(payload.groupId).emit("receiveMessage", populated);
-      console.log(`Message sent to group ${payload.groupId}`);
-    } catch (err) {
-      console.error("socket sendMessage error", err);
+    // ✅ Auto-join group if not already joined
+    if (!socket.rooms.has(groupId)) {
+      socket.join(groupId);
+      console.log(`${socket.id} auto-joined group ${groupId}`);
     }
-  });
+
+    const msg = await Message.create({
+      group: groupId,
+      sender: senderId,
+      text,
+      image: image || "",
+    });
+
+    const populated = await msg.populate("sender", "name email");
+
+    // ✅ Send message to everyone in the group (including sender)
+    io.to(groupId).emit("receiveMessage", populated);
+
+    console.log(`Message sent to group ${groupId}`);
+  } catch (err) {
+    console.error("socket sendMessage error", err);
+  }
+});
+
 
   // ✅ Private chat join
   socket.on("joinPrivateChat", (chatId) => {
