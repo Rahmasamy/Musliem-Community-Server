@@ -1,5 +1,4 @@
 # Don't commit the .env file
-.env
 
 # Ignore dependencies
 node_modules/
@@ -7,3 +6,4 @@ node_modules/
 # Optional: ignore build output
 dist/
 build/
+config.bat
