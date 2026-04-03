@@ -40,12 +40,18 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    const data = await resend.emails.send({
-      from: 'No Reply <onboarding@resend.dev>', // or your verified domain
+    const { data, error } = await resend.emails.send({
+      from: 'Muslim Community App <noreply@crescent-hub.com>',
       to,
       subject,
       html,
     });
+
+    if (error) {
+      console.error("❌ Resend returned an error:", error);
+      throw new Error(error.message || "Failed to send email");
+    }
+
     console.log("✅ Email sent:", data);
     return data;
   } catch (error) {
