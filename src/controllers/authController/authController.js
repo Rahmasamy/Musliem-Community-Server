@@ -10,7 +10,7 @@ const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '15m' });
 };
 
-// refrsh token 
+// refrsh token L
 const generateRefreshToken = (user) => {
     return jwt.sign(
         { id: user._id, role: user.role },

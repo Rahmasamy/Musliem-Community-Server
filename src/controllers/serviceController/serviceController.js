@@ -337,6 +337,7 @@ export const getAllServices = async (req, res) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const services = await Service.find(query)
+      .populate("user", "id fullName photo email phone")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
